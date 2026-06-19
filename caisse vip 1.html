@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Caisse — Bureau de Change</title>
+<style>
+  :root {
+    --navy:   #1F3864;
+    --blue:   #2E75B6;
+    --lblue:  #D6E4F0;
+    --green:  #1E6B3A;
+    --lgreen: #E2EFDA;
+    --red:    #C00000;
+    --lred:   #FCE4EC;
+    --amber:  #FFF2CC;
+    --gray:   #F2F2F2;
+    --border: #CCCCCC;
+    --white:  #FFFFFF;
+    --text:   #1A1A1A;
+    --muted:  #666666;
+    --bg:     #F5F5F5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+
+  /* ── HEADER ── */
+  header { background: var(--navy); color: white; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 18px; font-weight: bold; letter-spacing: .01em; }
+  header .bureau-name { font-size: 13px; opacity: .75; margin-top: 2px; }
+  .header-right { text-align: right; }
+  .header-date { font-size: 13px; opacity: .75; }
+
+  /* ── LAYOUT ── */
+  .main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+
+  /* ── KPI ROW ── */
+  .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
+  .kpi { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; }
+  .kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+  .kpi-val { font-size: 20px; font-weight: bold; color: var(--text); }
+  .kpi-val.pos { color: var(--green); }
+  .kpi-val.neg { color: var(--red); }
+  .kpi-val.neutral { color: var(--navy); }
+
+  /* ── CARDS ── */
+  .card { background: white; border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 16px; }
+  .card-title { font-size: 13px; font-weight: bold; color: var(--navy); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+
+  /* ── SOLDE INIT ── */
+  .solde-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .solde-row label { font-size: 13px; color: var(--muted); white-space: nowrap; }
+  .solde-row input[type=number] { width: 180px; }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: 160px 1fr 1fr 160px auto; gap: 10px; align-items: end; }
+  .field label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: .03em; }
+  input[type=text], input[type=number], select, textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 13px; font-family: Arial, sans-serif; color: var(--text); background: white;
+    outline: none; transition: border-color .15s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--blue); }
+  .btn { padding: 8px 18px; border-radius: 6px; border: 1px solid var(--border); background: var(--navy); color: white;
+    font-size: 13px; font-weight: bold; cursor: pointer; white-space: nowrap; font-family: Arial, sans-serif; }
+  .btn:hover { background: var(--blue); }
+  .btn-outline { background: white; color: var(--navy); }
+  .btn-outline:hover { background: var(--gray); }
+  .btn-danger { background: white; color: var(--red); border-color: var(--red); }
+  .btn-danger:hover { background: var(--lred); }
+  .btn-print { background: var(--green); border-color: var(--green); }
+  .btn-print:hover { background: #145028; }
+
+  /* ── TABLE ── */
+  .tbl-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { background: var(--navy); color: white; padding: 9px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+  tbody tr:nth-child(even) { background: var(--gray); }
+  tbody tr:hover { background: var(--lblue); }
+  tbody td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: bold; padding: 3px 9px; border-radius: 999px; }
+  .badge-e { background: var(--lgreen); color: var(--green); }
+  .badge-s { background: var(--lred); color: var(--red); }
+  .del-btn { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 16px; padding: 2px 6px; border-radius: 4px; line-height: 1; }
+  .del-btn:hover { background: var(--lred); color: var(--red); }
+  .empty-state { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+
+  /* ── BILAN ── */
+  .bilan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .bilan-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .bilan-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+  .bilan-table tr:last-child td { border-bottom: none; font-weight: bold; }
+  .bilan-table .lbl { color: var(--muted); }
+  .bilan-table .val { text-align: right; font-variant-numeric: tabular-nums; font-weight: bold; }
+  .bilan-section-title { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+  .bilan-section-title.e { color: var(--green); }
+  .bilan-section-title.s { color: var(--red); }
+
+  /* ── TOOLBAR ── */
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 10px; flex-wrap: wrap; }
+  .toolbar-left { display: flex; gap: 8px; align-items: center; }
+  .filter-select { padding: 6px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 12px; background: white; }
+  .count-badge { font-size: 12px; color: var(--muted); padding: 4px 10px; background: var(--gray); border-radius: 999px; }
+
+  /* ── CLÔTURE ── */
+  .cloture-box { background: var(--navy); color: white; border-radius: 8px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .cloture-box .lbl { font-size: 12px; opacity: .75; margin-bottom: 4px; }
+  .cloture-box .val { font-size: 28px; font-weight: bold; }
+  .cloture-box .val.pos { color: #A8D5B5; }
+  .cloture-box .val.neg { color: #F5A0A0; }
+
+  /* ── PRINT ── */
+  @media print {
+    body { background: white; }
+    header { background: #1F3864 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .no-print { display: none !important; }
+    .card { border: 1px solid #999; box-shadow: none; page-break-inside: avoid; }
+    thead th { background: #1F3864 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .main { padding: 10px; max-width: 100%; }
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 10px; padding: 24px; width: 400px; max-width: 95vw; }
+  .modal h3 { font-size: 15px; font-weight: bold; color: var(--navy); margin-bottom: 16px; }
+  .modal .field { margin-bottom: 12px; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+  .note-field textarea { resize: vertical; min-height: 60px; }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .form-grid { grid-template-columns: 1fr 1fr; }
+    .bilan-grid { grid-template-columns: 1fr; }
+    .cloture-box { flex-direction: column; gap: 10px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>&#127970; Caisse — Bureau de Change</h1>
+    <div class="bureau-name" id="headerBureau">Chargement...</div>
+  </div>
+  <div class="header-right">
+    <div class="header-date" id="headerDate"></div>
+    <div class="header-date" id="headerTime" style="font-size:15px;font-weight:bold;opacity:1;margin-top:2px"></div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- KPI -->
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-label">Solde initial</div>
+      <div class="kpi-val neutral" id="kInit">0,00</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Total entrées</div>
+      <div class="kpi-val pos" id="kEntrees">0,00</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Total sorties</div>
+      <div class="kpi-val neg" id="kSorties">0,00</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Mouvement net</div>
+      <div class="kpi-val" id="kNet">0,00</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Solde final</div>
+      <div class="kpi-val" id="kFinal">0,00</div>
+    </div>
+  </div>
+
+  <!-- CONFIG -->
+  <div class="card no-print">
+    <div class="card-title">&#9881;&#65039; Paramètres de la journée</div>
+    <div class="solde-row">
+      <label for="soldInit">Nom du bureau :</label>
+      <input type="text" id="bureauName" value="Bureau de Change" style="width:220px" oninput="saveConfig()">
+      <label for="soldInit" style="margin-left:16px">Solde MAD d'ouverture :</label>
+      <input type="number" id="soldInit" value="0" min="0" step="0.01" style="width:160px" oninput="refresh()">
+      <span style="font-size:13px;color:var(--muted)">MAD</span>
+    </div>
+  </div>
+
+  <!-- FORM — 2 rows: Entrée + Sortie -->
+  <div class="card no-print" style="background:#F0FBF4;border-color:#A8D5B5;">
+    <div class="card-title" style="color:var(--green);border-color:#A8D5B5;">&#x2B06; Nouvelle Entrée</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Montant (MAD)</label>
+        <input type="number" id="eMontant" placeholder="0.00" min="0" step="0.01" style="border-color:#A8D5B5;">
+      </div>
+      <div class="field" style="grid-column:span 2;">
+        <label>Libellé</label>
+        <input type="text" id="eLibelle" placeholder="Description de l'entrée..." style="border-color:#A8D5B5;">
+      </div>
+      <div class="field">
+        <label>Catégorie</label>
+        <select id="eCat" style="border-color:#A8D5B5;">
+          <option value="">— Aucune —</option>
+          <option value="Achat devises">Achat devises</option>
+          <option value="Vente devises">Vente devises</option>
+          <option value="Frais bancaires">Frais bancaires</option>
+          <option value="Salaire">Salaire</option>
+          <option value="Loyer">Loyer</option>
+          <option value="Charges">Charges</option>
+          <option value="Divers">Divers</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button class="btn" style="background:var(--green);border-color:var(--green);width:100%;" onclick="addEntree()">&#x2B06; Ajouter Entrée</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card no-print" style="background:#FFF5F5;border-color:#F5A0A0;">
+    <div class="card-title" style="color:var(--red);border-color:#F5A0A0;">&#x2B07; Nouvelle Sortie</div>
+    <div class="form-grid">
+      <div class="field">
+        <label>Montant (MAD)</label>
+        <input type="number" id="sMontant" placeholder="0.00" min="0" step="0.01" style="border-color:#F5A0A0;">
+      </div>
+      <div class="field" style="grid-column:span 2;">
+        <label>Libellé</label>
+        <input type="text" id="sLibelle" placeholder="Description de la sortie..." style="border-color:#F5A0A0;">
+      </div>
+      <div class="field">
+        <label>Catégorie</label>
+        <select id="sCat" style="border-color:#F5A0A0;">
+          <option value="">— Aucune —</option>
+          <option value="Achat devises">Achat devises</option>
+          <option value="Vente devises">Vente devises</option>
+          <option value="Frais bancaires">Frais bancaires</option>
+          <option value="Salaire">Salaire</option>
+          <option value="Loyer">Loyer</option>
+          <option value="Charges">Charges</option>
+          <option value="Divers">Divers</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button class="btn" style="background:var(--red);border-color:var(--red);width:100%;" onclick="addSortie()">&#x2B07; Ajouter Sortie</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- REGISTRE -->
+  <div class="card">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <strong style="color:var(--navy);font-size:13px;text-transform:uppercase;letter-spacing:.04em">&#128203; Registre des opérations</strong>
+        <span class="count-badge" id="opCount">0 opération(s)</span>
+      </div>
+      <div class="toolbar-left">
+        <select class="filter-select no-print" id="filterType" onchange="refresh()">
+          <option value="">Toutes</option>
+          <option value="E">Entrées</option>
+          <option value="S">Sorties</option>
+        </select>
+        <select class="filter-select no-print" id="filterCat" onchange="refresh()">
+          <option value="">Toutes catégories</option>
+        </select>
+        <button class="btn btn-print no-print" onclick="window.print()">&#128438; Imprimer</button>
+        <button class="btn btn-outline no-print" onclick="exportCSV()">&#8659; CSV</button>
+        <button class="btn btn-danger no-print" onclick="confirmClear()">&#128465; Effacer</button>
+      </div>
+    </div>
+    <div class="tbl-wrap" id="tblWrap">
+      <div class="empty-state">Aucune opération enregistrée.</div>
+    </div>
+  </div>
+
+  <!-- BILAN + CLÔTURE -->
+  <div class="card">
+    <div class="card-title">&#128200; Bilan par catégorie</div>
+    <div class="bilan-grid">
+      <div>
+        <div class="bilan-section-title e">&#x2B06; Entrées</div>
+        <table class="bilan-table" id="bilanE"><tbody></tbody></table>
+      </div>
+      <div>
+        <div class="bilan-section-title s">&#x2B07; Sorties</div>
+        <table class="bilan-table" id="bilanS"><tbody></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="cloture-box">
+    <div>
+      <div class="lbl">Solde initial</div>
+      <div style="font-size:18px;font-weight:bold" id="clInit">0,00 MAD</div>
+    </div>
+    <div style="font-size:24px;opacity:.4">+&#8593; &#x2212;&#8595;</div>
+    <div>
+      <div class="lbl">Entrées &nbsp;&#8722;&nbsp; Sorties</div>
+      <div style="font-size:18px;font-weight:bold" id="clMouv">0,00 MAD</div>
+    </div>
+    <div style="font-size:24px;opacity:.4">=</div>
+    <div style="text-align:right">
+      <div class="lbl">SOLDE FINAL DE CLÔTURE</div>
+      <div class="val" id="clFinal">0,00 MAD</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL confirm clear -->
+<div class="modal-overlay" id="modalClear">
+  <div class="modal">
+    <h3>&#128465; Effacer toutes les opérations ?</h3>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:16px">Cette action est irréversible. Le solde initial sera conservé.</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-danger" onclick="clearAll()">Effacer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let ops = [];
+let nextId = 1;
+const STORAGE_KEY = 'caisse_bdc_v1';
+
+// ── Init ───────────────────────────────────────────────────────────────────
+window.onload = function() {
+  loadData();
+  updateClock();
+  setInterval(updateClock, 1000);
+  document.getElementById('eMontant').addEventListener('keydown', e => { if(e.key==='Enter') addEntree(); });
+  document.getElementById('eLibelle').addEventListener('keydown', e => { if(e.key==='Enter') addEntree(); });
+  document.getElementById('sMontant').addEventListener('keydown', e => { if(e.key==='Enter') addSortie(); });
+  document.getElementById('sLibelle').addEventListener('keydown', e => { if(e.key==='Enter') addSortie(); });
+  refresh();
+};
+
+function updateClock() {
+  const now = new Date();
+  const days = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  const months = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  document.getElementById('headerDate').textContent =
+    days[now.getDay()] + ' ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+  document.getElementById('headerTime').textContent =
+    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+}
+
+// ── Persistence ────────────────────────────────────────────────────────────
+function saveData() {
+  const soldInit = parseFloat(document.getElementById('soldInit').value) || 0;
+  const bureauName = document.getElementById('bureauName').value || 'Bureau de Change';
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ops, nextId, soldInit, bureauName }));
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    ops = data.ops || [];
+    nextId = data.nextId || (ops.length + 1);
+    if (data.soldInit !== undefined) document.getElementById('soldInit').value = data.soldInit;
+    if (data.bureauName) document.getElementById('bureauName').value = data.bureauName;
+  } catch(e) { ops = []; }
+}
+
+function saveConfig() {
+  const name = document.getElementById('bureauName').value || 'Bureau de Change';
+  document.getElementById('headerBureau').textContent = name;
+  saveData();
+}
+
+// ── Operations ─────────────────────────────────────────────────────────────
+function addEntree() {
+  const montant = parseFloat(document.getElementById('eMontant').value);
+  const libelle = document.getElementById('eLibelle').value.trim();
+  const cat     = document.getElementById('eCat').value;
+  if (!montant || montant <= 0) { highlight('eMontant'); return; }
+  if (!libelle)                  { highlight('eLibelle'); return; }
+  const now = new Date();
+  const heure = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  ops.push({ id: nextId++, type: 'E', montant, libelle, cat, heure });
+  document.getElementById('eMontant').value = '';
+  document.getElementById('eLibelle').value = '';
+  document.getElementById('eMontant').focus();
+  saveData(); refresh();
+}
+
+function addSortie() {
+  const montant = parseFloat(document.getElementById('sMontant').value);
+  const libelle = document.getElementById('sLibelle').value.trim();
+  const cat     = document.getElementById('sCat').value;
+  if (!montant || montant <= 0) { highlight('sMontant'); return; }
+  if (!libelle)                  { highlight('sLibelle'); return; }
+  const now = new Date();
+  const heure = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+  ops.push({ id: nextId++, type: 'S', montant, libelle, cat, heure });
+  document.getElementById('sMontant').value = '';
+  document.getElementById('sLibelle').value = '';
+  document.getElementById('sMontant').focus();
+  saveData(); refresh();
+}
+
+function addOp() { addEntree(); }
+
+function deleteOp(id) {
+  ops = ops.filter(o => o.id !== id);
+  saveData();
+  refresh();
+}
+
+function highlight(id) {
+  const el = document.getElementById(id);
+  el.style.borderColor = 'var(--red)';
+  el.focus();
+  setTimeout(() => { el.style.borderColor = ''; }, 1500);
+}
+
+// ── Refresh ────────────────────────────────────────────────────────────────
+function refresh() {
+  const soldInit = parseFloat(document.getElementById('soldInit').value) || 0;
+  const bureauName = document.getElementById('bureauName').value || 'Bureau de Change';
+  document.getElementById('headerBureau').textContent = bureauName;
+
+  const filterType = document.getElementById('filterType').value;
+  const filterCat  = document.getElementById('filterCat').value;
+
+  // Full ops for KPIs (no filter)
+  const totalE = ops.filter(o=>o.type==='E').reduce((s,o)=>s+o.montant,0);
+  const totalS = ops.filter(o=>o.type==='S').reduce((s,o)=>s+o.montant,0);
+  const net    = totalE - totalS;
+  const final  = soldInit + net;
+
+  // KPIs
+  document.getElementById('kInit').textContent    = fmt(soldInit) + ' MAD';
+  document.getElementById('kEntrees').textContent = fmt(totalE) + ' MAD';
+  document.getElementById('kSorties').textContent = fmt(totalS) + ' MAD';
+  const kNet = document.getElementById('kNet');
+  kNet.textContent  = (net >= 0 ? '+' : '') + fmt(net) + ' MAD';
+  kNet.className    = 'kpi-val ' + (net >= 0 ? 'pos' : 'neg');
+  const kFin = document.getElementById('kFinal');
+  kFin.textContent  = fmt(final) + ' MAD';
+  kFin.className    = 'kpi-val ' + (final >= soldInit ? 'pos' : 'neg');
+
+  // Clôture
+  document.getElementById('clInit').textContent   = fmt(soldInit) + ' MAD';
+  document.getElementById('clMouv').textContent   = (net >= 0 ? '+' : '') + fmt(net) + ' MAD';
+  const clFin = document.getElementById('clFinal');
+  clFin.textContent = fmt(final) + ' MAD';
+  clFin.className   = 'val ' + (final >= soldInit ? 'pos' : 'neg');
+
+  // Update category filter
+  updateCatFilter();
+
+  // Filtered ops for table
+  let filtered = [...ops];
+  if (filterType) filtered = filtered.filter(o => o.type === filterType);
+  if (filterCat)  filtered = filtered.filter(o => o.cat === filterCat);
+  document.getElementById('opCount').textContent = filtered.length + ' opération(s)';
+
+  // Table
+  renderTable(filtered, soldInit);
+
+  // Bilan
+  renderBilan();
+
+  saveData();
+}
+
+function renderTable(filtered, soldInit) {
+  const wrap = document.getElementById('tblWrap');
+  if (!filtered.length) {
+    wrap.innerHTML = '<div class="empty-state">Aucune opération à afficher.</div>';
+    return;
+  }
+
+  // Compute running balance on ALL ops (not filtered) in order
+  const balanceMap = {};
+  let running = soldInit;
+  for (const o of ops) {
+    running += o.type === 'E' ? o.montant : -o.montant;
+    balanceMap[o.id] = running;
+  }
+
+  let html = `<table><thead><tr>
+    <th>Heure</th><th>Type</th><th>Libellé</th><th>Catégorie</th>
+    <th class="num">Montant MAD</th><th class="num">Solde courant</th>
+    <th class="no-print"></th>
+  </tr></thead><tbody>`;
+
+  for (const o of filtered) {
+    const isE = o.type === 'E';
+    html += `<tr>
+      <td style="color:var(--muted);font-size:12px">${o.heure}</td>
+      <td><span class="badge ${isE?'badge-e':'badge-s'}">${isE?'&#x2B06; Entrée':'&#x2B07; Sortie'}</span></td>
+      <td>${esc(o.libelle)}</td>
+      <td style="color:var(--muted);font-size:12px">${esc(o.cat||'—')}</td>
+      <td class="num" style="font-weight:bold;color:${isE?'var(--green)':'var(--red)'}">
+        ${isE?'+':'-'}${fmt(o.montant)}
+      </td>
+      <td class="num" style="color:var(--muted)">${fmt(balanceMap[o.id])}</td>
+      <td class="no-print" style="text-align:center">
+        <button class="del-btn" onclick="deleteOp(${o.id})" title="Supprimer">&#x2715;</button>
+      </td>
+    </tr>`;
+  }
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+function renderBilan() {
+  function buildTable(type, elId) {
+    const cats = {};
+    for (const o of ops.filter(o=>o.type===type)) {
+      const k = o.cat || 'Divers';
+      if (!cats[k]) cats[k] = 0;
+      cats[k] += o.montant;
+    }
+    const entries = Object.entries(cats).sort((a,b)=>b[1]-a[1]);
+    const total = entries.reduce((s,[,v])=>s+v,0);
+    const tbody = document.querySelector('#'+elId+' tbody');
+    if (!entries.length) { tbody.innerHTML = '<tr><td colspan="2" style="color:var(--muted);font-size:12px;padding:8px">—</td></tr>'; return; }
+    tbody.innerHTML = entries.map(([k,v]) =>
+      `<tr><td class="lbl">${esc(k)}</td><td class="val" style="color:${type==='E'?'var(--green)':'var(--red)'}">${fmt(v)} MAD</td></tr>`
+    ).join('') + `<tr><td class="lbl">TOTAL</td><td class="val" style="color:${type==='E'?'var(--green)':'var(--red)'}">${fmt(total)} MAD</td></tr>`;
+  }
+  buildTable('E','bilanE');
+  buildTable('S','bilanS');
+}
+
+function updateCatFilter() {
+  const sel = document.getElementById('filterCat');
+  const cur = sel.value;
+  const cats = [...new Set(ops.map(o=>o.cat).filter(Boolean))].sort();
+  sel.innerHTML = '<option value="">Toutes catégories</option>' +
+    cats.map(c=>`<option value="${esc(c)}" ${c===cur?'selected':''}>${esc(c)}</option>`).join('');
+  sel.value = cur;
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function fmt(n) {
+  return Number(n).toLocaleString('fr-MA', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── Export CSV ──────────────────────────────────────────────────────────────
+function exportCSV() {
+  const soldInit = parseFloat(document.getElementById('soldInit').value)||0;
+  const bureau   = document.getElementById('bureauName').value || 'Bureau de Change';
+  const today    = new Date().toLocaleDateString('fr-MA');
+  let csv = '\uFEFF'; // BOM for Excel
+  csv += `Bureau;${bureau}\n`;
+  csv += `Date;${today}\n`;
+  csv += `Solde initial;${soldInit}\n\n`;
+  csv += 'Heure;Type;Libellé;Catégorie;Montant MAD\n';
+  for (const o of ops) {
+    csv += `${o.heure};${o.type==='E'?'Entrée':'Sortie'};${o.libelle};${o.cat||''};${o.type==='E'?o.montant:-o.montant}\n`;
+  }
+  const totalE = ops.filter(o=>o.type==='E').reduce((s,o)=>s+o.montant,0);
+  const totalS = ops.filter(o=>o.type==='S').reduce((s,o)=>s+o.montant,0);
+  csv += `\nTotal entrées;;; ;${totalE}\n`;
+  csv += `Total sorties;;; ;${-totalS}\n`;
+  csv += `Solde final;;; ;${soldInit+totalE-totalS}\n`;
+
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `caisse_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ── Clear ───────────────────────────────────────────────────────────────────
+function confirmClear() { document.getElementById('modalClear').classList.add('open'); }
+function closeModal()   { document.getElementById('modalClear').classList.remove('open'); }
+function clearAll() {
+  ops = []; nextId = 1;
+  closeModal();
+  saveData();
+  refresh();
+}
+
+document.getElementById('modalClear').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
